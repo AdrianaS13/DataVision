@@ -25,6 +25,13 @@
             margin-bottom: 20px;
             color: #333; /* Couleur du texte */
         }
+        #plot-source {
+            font-size: 15px; /* Taille de la police pour le titre */
+            font-weight: bold;
+            text-align: center;
+            margin-top: 20px;
+            color: #333; /* Couleur du texte */
+        }
 
         #container {
             display: flex;
@@ -78,6 +85,7 @@
             <div id="no-image-message">Sélectionnez un point pour voir l'image</div> <!-- Message quand il n'y a pas d'image -->
         </div>
     </div>
+    <div id="plot-source">Source: LAION-Aesthetics V1 · Minified 10K</div>
     <script>
         // Fonction pour obtenir des données JSON
         async function fetchData() {
