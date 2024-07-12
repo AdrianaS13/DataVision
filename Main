@@ -1,0 +1,63 @@
+import os
+import json
+from PIL import Image
+import numpy as np
+
+# Directory containing images
+image_directory = 'images'
+
+# Function to calculate the average brightness of an image
+def calculate_average_brightness(image):
+    grayscale_img = image.convert('L')
+    pixels = np.array(grayscale_img)
+    avg_brightness = np.mean(pixels)
+    return avg_brightness
+
+# Function to calculate the contrast of an image
+def calculate_contrast(image):
+    grayscale_img = image.convert('L')
+    pixels = np.array(grayscale_img)
+    contrast = np.std(pixels)
+    return contrast
+
+# Function to calculate the variance of brightness
+def calculate_brightness_variance(image):
+    grayscale_img = image.convert('L')
+    pixels = np.array(grayscale_img)
+    variance = np.var(pixels)
+    return variance
+
+# Collect image data
+image_data = []
+
+for image_file in os.listdir(image_directory):
+    if image_file.lower().endswith(('png', 'jpg', 'jpeg', 'bmp', 'gif')):
+        image_path = os.path.join(image_directory, image_file)
+        try:
+            with Image.open(image_path) as img:
+                # Handle images with transparency
+                if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
+                    img = img.convert('RGBA')
+                    background = Image.new('RGBA', img.size, (255, 255, 255))
+                    img = Image.alpha_composite(background, img)
+                    img = img.convert('RGB')
+                else:
+                    img = img.convert('RGB')
+
+                avg_brightness = calculate_average_brightness(img)
+                contrast = calculate_contrast(img)
+                brightness_variance = calculate_brightness_variance(img)
+
+                image_data.append({
+                    'Filename': image_file,
+                    'Path': image_path,
+                    'Average Brightness': avg_brightness,
+                    'Contrast': contrast,
+                    'Brightness Variance': brightness_variance
+                })
+        except Exception as e:
+            print(f"Error processing {image_file}: {e}")
+
+# Save data to JSON
+with open('image_data.json', 'w') as f:
+    json.dump(image_data, f, indent=4)

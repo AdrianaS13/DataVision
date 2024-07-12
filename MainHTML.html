@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>3D Scatter Plot sur les aspects lumineux des images utilisés en IA générative</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet"> <!-- Ajouter Google Font -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-family: 'Roboto', sans-serif; /* Police du texte */
+            background-color: #f4f4f9; /* Couleur de fond claire */
+        }
+
+        #plot-title {
+            font-size: 28px; /* Taille de la police pour le titre */
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333; /* Couleur du texte */
+        }
+
+        #container {
+            display: flex;
+            height: 75vh; /* Augmenter la hauteur du conteneur */
+            width: 80vw; /* Augmenter la largeur du conteneur */
+            border-radius: 20px; /* Coins arrondis */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Ombre du conteneur */
+            overflow: hidden; /* Masquer le contenu débordant */
+        }
+
+        #scatter-plot {
+            width: 70%; /* Réduire la taille du graphique */
+            height: 100%;
+        }
+
+        #image-preview {
+            width: 30%; /* Augmenter la largeur de la barre latérale */
+            padding: 20px; /* Augmenter le remplissage */
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #fff; /* Couleur de fond blanc */
+            border-left: 2px solid #ddd; /* Bord gauche */
+            border-radius: 10px 0 0 10px; /* Coins arrondis uniquement à gauche */
+            position: relative; /* Position relative pour le message */
+        }
+
+        #preview-image {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 5px; /* Coins arrondis pour l'image */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Ombre de l'image */
+            display: none; /* Masquer l'image par défaut */
+        }
+
+        #no-image-message {
+            color: #aaa; /* Couleur du message */
+            text-align: center;
+            font-size: 16px; /* Taille de la police du message */
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div id="plot-title">3D Scatter Plot sur les aspects lumineux des images utilisés en IA générative</div>
+    <div id="container">
+        <div id="scatter-plot"></div>
+        <div id="image-preview">
+            <img id="preview-image" src="" alt="Aperçu de l'image">
+            <div id="no-image-message">Sélectionnez un point pour voir l'image</div> <!-- Message quand il n'y a pas d'image -->
+        </div>
+    </div>
+    <script>
+        // Fonction pour obtenir des données JSON
+        async function fetchData() {
+            const response = await fetch('image_data.json');
+            const data = await response.json();
+            return data;
+        }
+
+        // Fonction pour convertir les chemins Windows en chemins compatibles avec les URLs
+        function convertPathToURL(path) {
+            return path.replace(/\\/g, '/');
+        }
+
+        // Fonction pour ajouter le préfixe du répertoire des images aux chemins
+        function addImageDirectoryPrefix(path) {
+            const basePath = 'images/';
+            return basePath + path;
+        }
+
+        // Obtenir les données et créer le graphique
+        fetchData().then(data => {
+            const avgBrightness = data.map(item => item['Average Brightness']);
+            const contrast = data.map(item => item['Contrast']);
+            const brightnessVariance = data.map(item => item['Brightness Variance']);
+            const filenames = data.map(item => item['Filename']);            
+            const paths = data.map(item => convertPathToURL(item['Path']));
+
+            const trace = {
+                x: avgBrightness,
+                y: contrast,
+                z: brightnessVariance,
+                text: paths,
+                mode: 'markers',
+                marker: {
+                    size: 7, 
+                    color: avgBrightness,
+                    colorscale: [
+                        [0, '#ff0000'],  // Rouge 
+                        [0.2, '#ff4d00'], // Rouge-Orangé 
+                        [0.4, '#ff8c00'], // Orange 
+                        [0.6, '#ffaa00'], // Orange-Clair 
+                        [0.8, '#ffcc00'], // Jaune-Clair 
+                        [1, '#ffff00']    // Jaune 
+                    ],
+
+                    colorbar: {
+                        title: 'Luminosité Moyenne',
+                        titleside: 'right',
+                        tickmode: 'auto',
+                        ticks: 'outside',
+                        len: 0.6, 
+                        thickness: 25, 
+                        x: 1.15, 
+                        y: 0.5, 
+                        yanchor: 'middle', 
+                        titlefont: {
+                            family: 'Roboto, sans-serif',
+                            size: 16,
+                            color: '#000'
+                        },
+                        tickfont: {
+                            family: 'Roboto, sans-serif',
+                            size: 12,
+                            color: '#000'
+                        }
+                    },
+                    opacity: 0.9 
+                },
+                type: 'scatter3d',
+                hovertemplate: '<b>%{text}</b><br>Luminosité: %{x}<br>Contraste: %{y}<br>Variation: %{z}<extra></extra>'
+            };
+
+            const layout = {
+                scene: {
+                    xaxis: {
+                        title: 'Luminosité Moyenne',
+                        titlefont: { /* Style du titre de l’axe x */
+                            family: 'Roboto, sans-serif',
+                            size: 16, 
+                            color: '#000' 
+                        },
+                        tickfont: { /* Style des ticks de l’axe x */
+                            family: 'Roboto, sans-serif',
+                            size: 12, 
+                            color: '#000'
+                        }
+                    },
+                    yaxis: {
+                        title: 'Contraste',
+                        titlefont: { /* Style du titre de l’axe y */
+                            family: 'Roboto, sans-serif',
+                            size: 16, 
+                            color: '#000' 
+                        },
+                        tickfont: { /* Style des ticks de l’axe y */
+                            family: 'Roboto, sans-serif',
+                            size: 12, 
+                            color: '#000' 
+                        }
+                    },
+                    zaxis: {
+                        title: 'Variation de la Luminosité',
+                        titlefont: { /* Style du titre de l’axe z */
+                            family: 'Roboto, sans-serif',
+                            size: 16, 
+                            color: '#000' 
+                        },
+                        tickfont: { /* Style des ticks de l’axe z */
+                            family: 'Roboto, sans-serif',
+                            size: 12, 
+                            color: '#000'
+                        }
+                    }
+                },
+                margin: {
+                    l: 20, /* Augmenter la marge */
+                    r: 20,
+                    b: 20,
+                    t: 20
+                }
+            };
+
+            const config = {
+                responsive: true
+            };
+
+            Plotly.newPlot('scatter-plot', [trace], layout, config);
+
+
+            // Écouter l'événement hover
+            document.getElementById('scatter-plot').on('plotly_hover', function(eventdata) {
+                const pointData = eventdata.points[0];
+                const imagePath = pointData.text;
+                const previewImage = document.getElementById('preview-image');
+                const noImageMessage = document.getElementById('no-image-message');
+
+                previewImage.src = imagePath;
+                previewImage.style.display = 'block'; 
+                noImageMessage.style.display = 'none'; 
+            });
+
+            // Nettoyer l'image lorsque le hover est terminé
+            document.getElementById('scatter-plot').on('plotly_unhover', function(eventdata) {
+                const previewImage = document.getElementById('preview-image');
+                const noImageMessage = document.getElementById('no-image-message');
+
+                previewImage.src = '';
+                previewImage.style.display = 'none'; 
+                noImageMessage.style.display = 'block'; 
+            });
+        });
+    </script>
+</body>
+</html>
